@@ -5,13 +5,14 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"log"
-	"task5_server/config"
+
+	"socks5proxy"
 )
 
 const BlockSize = 128
 
-var key = []byte(config.REQ_KEY)
-var iv = []byte(config.REQ_IV)
+var key = []byte(socks5proxy.REQ_KEY)
+var iv = []byte(socks5proxy.REQ_IV)
 
 func Encrypt(text []byte) ([]byte, error) {
 	//生成cipher.Block 数据块
@@ -33,15 +34,11 @@ func Encrypt(text []byte) ([]byte, error) {
 
 func pad(ciphertext []byte, blockSize int) []byte {
 	padding := blockSize - len(ciphertext)
-	padtext := bytes.Repeat([]byte{0}, padding)
+	padtext := bytes.Repeat([]byte{0x0}, padding)
 	return append(ciphertext, padtext...)
 }
 
 func Decrypt(decode_data []byte, sign int) ([]byte, error) {
-	// decode_data, err := base64.StdEncoding.DecodeString(text)
-	// if err != nil {
-	// 	return nil, nil
-	// }
 	//生成密码数据块cipher.Block
 	block, _ := aes.NewCipher(key)
 	//解密模式
@@ -56,13 +53,6 @@ func Decrypt(decode_data []byte, sign int) ([]byte, error) {
 }
 
 func unpad(ciphertext []byte, sign int) []byte {
-	// log.Println("func unpad:")
-	// log.Println(ciphertext)
-	// length := len(ciphertext)
-	// log.Printf("length:%d", length)
-	//去掉最后一次的padding
-	// unpadding := int(ciphertext[length-1])
-	// return ciphertext[:(length - unpadding)]
 	unpadSign := BlockSize - sign
 	return ciphertext[:unpadSign]
 }

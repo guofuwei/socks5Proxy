@@ -4,8 +4,8 @@ import (
 	"errors"
 	"log"
 	"net"
-	"task5_server/config"
-	"task5_server/core"
+	"socks5proxy"
+	"socks5proxy/core"
 )
 
 func ListenServer(listenAddrString string) {
@@ -97,7 +97,7 @@ func localAuthHandle(serverClient *net.TCPConn) error {
 	passwd := string(buffer[:pLen])
 
 	// 读取uName和passwd完成，开始比对uName和passwd并回复客户端
-	if uName == config.USERNAME && passwd == config.PASSWORD {
+	if uName == socks5proxy.USERNAME && passwd == socks5proxy.PASSWORD {
 		serverClient.Write([]byte{0x0})
 	} else {
 		serverClient.Write([]byte{0x1})
@@ -123,7 +123,7 @@ func localDestHandle(serverClient *net.TCPConn) (*net.TCPConn, error) {
 	}
 	destAddrString := string(buffer[:destLen])
 	destAddr, err := net.ResolveTCPAddr("tcp", destAddrString)
-	log.Printf("destAddr is:%v", destAddr)
+	// log.Printf("destAddr is:%v", destAddr)
 	if err != nil {
 		return nil, err
 	}

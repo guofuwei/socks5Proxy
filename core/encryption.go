@@ -22,14 +22,11 @@ func DecodeRead(conn *net.TCPConn, bs []byte) (plainText []byte, n int, err erro
 		return
 	}
 	sign := int(bs[0])
-	// log.Printf("sign:%d", sign)
 	n, err = conn.Read(bs)
 	if err != nil {
 		return
 	}
 	plainText, err = Decrypt(bs[0:n], sign)
-	// log.Println("plainText:")
-	// log.Println(plainText)
 	if err != nil {
 		return
 	}
@@ -40,8 +37,6 @@ func EncodeCopy(src *net.TCPConn, dst *net.TCPConn) error {
 	buffer := make([]byte, BlockSize)
 	for {
 		readCount, readErr := src.Read(buffer)
-		// log.Println("server send:")
-		// log.Println(buffer[:readCount])
 		if readErr != nil {
 			if readErr != io.EOF {
 				return readErr
@@ -54,11 +49,6 @@ func EncodeCopy(src *net.TCPConn, dst *net.TCPConn) error {
 			if writeErr != nil {
 				return writeErr
 			}
-			// if readCount != writeCount {
-			// 	log.Printf("EncodeCopy:readCount:%d\n", readCount)
-			// 	log.Printf("EncodeCopy:writecount:%d\n", writeCount)
-			// 	return io.ErrShortWrite
-			// }
 		}
 	}
 }
@@ -67,9 +57,6 @@ func DecodeCopy(src *net.TCPConn, dst *net.TCPConn) error {
 	buffer := make([]byte, BlockSize)
 	for {
 		plainText, readCount, readErr := DecodeRead(src, buffer)
-		// log.Println("server recv:")
-		// log.Println(buffer[:readCount])
-		// log.Println(buffer)
 		if readErr != nil {
 			if readErr != io.EOF {
 				return readErr

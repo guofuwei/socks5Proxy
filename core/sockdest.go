@@ -60,11 +60,6 @@ func Socks5DestHandle(client *net.TCPConn) (string, error) {
 	port := binary.BigEndian.Uint16(buffer[:2])
 	// addr和port都已就绪，开始生成dest的conn
 	destAddrPort := fmt.Sprintf("%s:%d", addr, port)
-	// dest, err := net.Dial("tcp", destAddrPort)
-	// if err != nil {
-	// 	return nil, errors.New("dial error:" + err.Error())
-	// }
-	// log.Println("The destAddrPort:" + destAddrPort)
 	// 回复浏览器
 	_, err = client.Write([]byte{0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
 	if err != nil {
