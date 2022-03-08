@@ -1,8 +1,6 @@
 # socks5Proxy
 
-[![GitHub license](https://img.shields.io/github/license/shikanon/socks5proxy)](https://github.com/shikanon/socks5proxy/blob/master/LICENSE)
-
-[![Language](https://img.shields.io/badge/Language-Go-blue.svg)](https://golang.org/)
+[![GitHub license](https://img.shields.io/github/license/shikanon/socks5proxy)](https://github.com/shikanon/socks5proxy/blob/master/LICENSE)[![Language](https://img.shields.io/badge/Language-Go-blue.svg)](https://golang.org/)
 
 用golang实现的socks5协议的代理转发，在数据混淆部分使用AES加密算法，在client和server端的通信部分使用自定义的通信协议
 
