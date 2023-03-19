@@ -6,6 +6,7 @@ import (
 	"net"
 	"socks5proxy"
 	"socks5proxy/core"
+	"sync"
 )
 
 func ListenLocal(listenAddrString, serverAddrString string) error {
@@ -23,7 +24,7 @@ func ListenLocal(listenAddrString, serverAddrString string) error {
 		return err
 	}
 	defer localListener.Close()
-	log.Println("local start successed!")
+	log.Printf("local start successed,listen on %s\n", listenAddrString)
 
 	for {
 		localClient, err := localListener.AcceptTCP()
@@ -37,13 +38,13 @@ func ListenLocal(listenAddrString, serverAddrString string) error {
 func handleLocalClient(localClient *net.TCPConn, serverAddr *net.TCPAddr) {
 	serverSocket, err := DialRemote(serverAddr)
 	if err != nil {
-		log.Fatal("远程服务器连接错误")
+		log.Fatal("remote server connect error")
 	}
 	//这里是socks5协议，应该先截取socks5头部然后读取destAddr
 	buffer := make([]byte, 128)
 	err = core.Socks5AuthHandle(localClient)
 	if err != nil {
-		log.Fatal("auth error" + err.Error())
+		log.Fatal("auth error " + err.Error())
 	}
 	destAddrString, err := core.Socks5DestHandle(localClient)
 	if err != nil {
@@ -70,20 +71,19 @@ func handleLocalClient(localClient *net.TCPConn, serverAddr *net.TCPAddr) {
 		return
 	}
 	// 2.转发消息
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
 	go func() {
-		err = core.EncodeCopy(localClient, serverSocket)
-		if err != nil {
-			log.Println("client EncodeCpoy err:" + err.Error())
-		}
-		localClient.Close()
+		defer wg.Done()
+		defer localClient.Close()
+		core.EncodeCopy(localClient, serverSocket)
 	}()
 	go func() {
-		err = core.DecodeCopy(serverSocket, localClient)
-		if err != nil {
-			log.Println("client DecodeCpoy err:" + err.Error())
-		}
-		serverSocket.Close()
+		defer wg.Done()
+		defer serverSocket.Close()
+		core.DecodeCopy(serverSocket, localClient)
 	}()
+	wg.Wait()
 }
 
 func DialRemote(serverAddr *net.TCPAddr) (serverSocket *net.TCPConn, err error) {

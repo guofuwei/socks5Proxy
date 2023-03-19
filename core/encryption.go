@@ -2,7 +2,6 @@ package core
 
 import (
 	"io"
-	"log"
 	"net"
 )
 
@@ -22,11 +21,15 @@ func DecodeRead(conn *net.TCPConn, bs []byte) (plainText []byte, n int, err erro
 		return
 	}
 	sign := int(bs[0])
-	n, err = conn.Read(bs)
+	totalCount := 0
+	for totalCount != BlockSize {
+		n, err = conn.Read(bs[totalCount:])
+		totalCount += n
+	}
 	if err != nil {
 		return
 	}
-	plainText, err = Decrypt(bs[0:n], sign)
+	plainText, err = Decrypt(bs[0:totalCount], sign)
 	if err != nil {
 		return
 	}
@@ -47,7 +50,11 @@ func EncodeCopy(src *net.TCPConn, dst *net.TCPConn) error {
 		if readCount > 0 {
 			_, writeErr := EncodeWrite(dst, buffer[0:readCount])
 			if writeErr != nil {
-				return writeErr
+				if writeErr != io.EOF {
+					return writeErr
+				} else {
+					return nil
+				}
 			}
 		}
 	}
@@ -65,15 +72,19 @@ func DecodeCopy(src *net.TCPConn, dst *net.TCPConn) error {
 			}
 		}
 		if readCount > 0 {
-			writeCount, writeErr := dst.Write(plainText)
+			_, writeErr := dst.Write(plainText)
 			if writeErr != nil {
-				return writeErr
+				if writeErr != io.EOF {
+					return writeErr
+				} else {
+					return nil
+				}
 			}
-			if readCount != writeCount {
-				log.Printf("DecodeCopy:readCount:%d\n", readCount)
-				log.Printf("DecodeCopy:writecount:%d\n", writeCount)
-				return io.ErrShortWrite
-			}
+			// if readCount != writeCount {
+			// 	log.Printf("DecodeCopy:readCount:%d\n", readCount)
+			// 	log.Printf("DecodeCopy:writecount:%d\n", writeCount)
+			// 	return io.ErrShortWrite
+			// }
 		}
 	}
 }

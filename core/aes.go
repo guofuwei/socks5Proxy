@@ -18,7 +18,7 @@ func Encrypt(text []byte) ([]byte, error) {
 	//生成cipher.Block 数据块
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		log.Println("错误 -" + err.Error())
+		log.Println("error -" + err.Error())
 		return nil, err
 	}
 	//填充内容，如果不足16位字符
@@ -44,6 +44,7 @@ func Decrypt(decode_data []byte, sign int) ([]byte, error) {
 	//解密模式
 	blockMode := cipher.NewCBCDecrypter(block, iv)
 	//输出到[]byte数组
+	// log.Printf("Len:%d", len(decode_data))
 	origin_data := make([]byte, len(decode_data))
 	blockMode.CryptBlocks(origin_data, decode_data)
 	// log.Println(origin_data)

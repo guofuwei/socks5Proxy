@@ -6,6 +6,7 @@ import (
 	"net"
 	"socks5proxy"
 	"socks5proxy/core"
+	"sync"
 )
 
 func ListenServer(listenAddrString string) {
@@ -16,13 +17,12 @@ func ListenServer(listenAddrString string) {
 	}
 	serverListener, err := net.ListenTCP("tcp", listenAddr)
 	if err != nil {
-		log.Fatal("服务器监听端口错误")
+		log.Fatal("server listen address error")
 	}
 	defer serverListener.Close()
-	log.Println("server start successed!")
+	log.Printf("server start successed,listen on %s\n", listenAddrString)
 	for {
 		serverClient, err := serverListener.AcceptTCP()
-		// println("a new connect establish")
 		if err != nil {
 			log.Println(err)
 			continue
@@ -43,25 +43,23 @@ func handleServerClient(serverClient *net.TCPConn) {
 	// 获取目标地址
 	destSocket, err := localDestHandle(serverClient)
 	if err != nil {
-		log.Println(err)
 		serverClient.Close()
 		return
 	}
 	// 双向转发
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
 	go func() {
-		err = core.EncodeCopy(destSocket, serverClient)
-		if err != nil {
-			log.Println("server EncodeCopy err:" + err.Error())
-		}
-		destSocket.Close()
+		defer wg.Done()
+		defer destSocket.Close()
+		core.EncodeCopy(destSocket, serverClient)
 	}()
 	go func() {
-		err = core.DecodeCopy(serverClient, destSocket)
-		if err != nil {
-			log.Println("server DecodeCpoy err:" + err.Error())
-		}
-		serverClient.Close()
+		defer wg.Done()
+		defer serverClient.Close()
+		core.DecodeCopy(serverClient, destSocket)
 	}()
+	wg.Wait()
 }
 
 func localAuthHandle(serverClient *net.TCPConn) error {
