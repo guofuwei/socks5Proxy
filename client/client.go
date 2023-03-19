@@ -12,11 +12,11 @@ import (
 func ListenLocal(listenAddrString, serverAddrString string) error {
 	listenAddr, err := net.ResolveTCPAddr("tcp", listenAddrString)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("resolve local address error")
 	}
 	serverAddr, err := net.ResolveTCPAddr("tcp", serverAddrString)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("resolve server address error")
 	}
 
 	localListener, err := net.ListenTCP("tcp", listenAddr)
@@ -38,36 +38,42 @@ func ListenLocal(listenAddrString, serverAddrString string) error {
 func handleLocalClient(localClient *net.TCPConn, serverAddr *net.TCPAddr) {
 	serverSocket, err := DialRemote(serverAddr)
 	if err != nil {
-		log.Fatal("remote server connect error")
+		// log.Print("remote server connect error")
+		localClient.Close()
+		return
 	}
 	//这里是socks5协议，应该先截取socks5头部然后读取destAddr
 	buffer := make([]byte, 128)
 	err = core.Socks5AuthHandle(localClient)
 	if err != nil {
-		log.Fatal("auth error " + err.Error())
+		// log.Print("auth error " + err.Error())
+		serverSocket.Close()
+		localClient.Close()
+		return
 	}
 	destAddrString, err := core.Socks5DestHandle(localClient)
 	if err != nil {
-		log.Fatal("get destAddr error:" + err.Error())
+		// log.Print("get destAddr error:" + err.Error())
+		serverSocket.Close()
+		localClient.Close()
+		return
 	}
 	//开始使用自己的协议与server通信
 	// 1.发送host长度帧，发送host帧
 	destLen := len(destAddrString)
-	// log.Printf("destLen:%d", destLen)
-	// log.Printf("destAddrString:%s", destAddrString)
 	_, err = serverSocket.Write([]byte{byte(destLen)})
 	if err != nil {
-		log.Println("send destLen error:" + err.Error())
+		// log.Println("send destLen error:" + err.Error())
 		return
 	}
 	_, err = serverSocket.Write([]byte(destAddrString))
 	if err != nil {
-		log.Println("send destAddr error:" + err.Error())
+		// log.Println("send destAddr error:" + err.Error())
 		return
 	}
 	_, err = serverSocket.Read(buffer[:1])
 	if err != nil {
-		log.Println("server can't get the destSocket:" + err.Error())
+		// log.Println("server can't get the destSocket:" + err.Error())
 		return
 	}
 	// 2.转发消息
@@ -90,9 +96,8 @@ func DialRemote(serverAddr *net.TCPAddr) (serverSocket *net.TCPConn, err error) 
 	// 1.先与服务器建立tcp连接
 	serverSocket, err = net.DialTCP("tcp", nil, serverAddr)
 	if err != nil {
-		log.Fatal("远程服务器连接错误")
+		log.Fatal("remote server connect error")
 	}
-	// defer serverSocket.Close()
 	// 2.开始进行身份验证
 	// 发送uLen,uName,pLen,passwd
 	uName := socks5proxy.USERNAME

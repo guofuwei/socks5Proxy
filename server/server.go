@@ -24,7 +24,7 @@ func ListenServer(listenAddrString string) {
 	for {
 		serverClient, err := serverListener.AcceptTCP()
 		if err != nil {
-			log.Println(err)
+			// log.Println(err)
 			continue
 		}
 		serverClient.SetLinger(0)
@@ -36,7 +36,7 @@ func handleServerClient(serverClient *net.TCPConn) {
 	// 先进行权限的认证
 	err := localAuthHandle(serverClient)
 	if err != nil {
-		log.Println(err)
+		// log.Println(err)
 		serverClient.Close()
 		return
 	}
@@ -121,7 +121,6 @@ func localDestHandle(serverClient *net.TCPConn) (*net.TCPConn, error) {
 	}
 	destAddrString := string(buffer[:destLen])
 	destAddr, err := net.ResolveTCPAddr("tcp", destAddrString)
-	// log.Printf("destAddr is:%v", destAddr)
 	if err != nil {
 		return nil, err
 	}
